@@ -49,9 +49,12 @@
     background: transparent; color: var(--muted); border:none; padding: 10px 18px;
     border-radius: 8px 8px 0 0; cursor:pointer; font-size: 14px; font-weight: 600;
     border-bottom: 2px solid transparent;
+    display: inline-flex; align-items: center; gap: 6px;
   }
   nav.tabs button:hover { color: var(--text); background: var(--bg2); }
   nav.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+  nav.tabs button .t-ic { font-size: 16px; }
+  nav.tabs button .t-lb { font-size: 14px; }
 
   /* Filters */
   .filters {
@@ -312,10 +315,73 @@
     width: 100%; background: transparent; color: var(--muted); border: none;
     padding: 12px; cursor: pointer; font-size: 14px;
   }
+  /* filter sheet rows */
+  .src-sheet .fs-row { margin-bottom: 12px; }
+  .src-sheet .fs-row label { display: block; color: var(--muted); font-size: 12px;
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .src-sheet .fs-row select {
+    width: 100%; background: var(--bg3); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+    font-size: 16px; min-height: 48px;
+  }
+  .src-sheet .fs-row .toggle-row {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text); font-size: 14px; text-transform: none; letter-spacing: 0;
+    font-weight: normal; margin-bottom: 0;
+  }
+  .src-sheet .fs-row .toggle-row input[type="checkbox"] {
+    width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0;
+  }
+  .src-sheet .fs-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .src-sheet .fs-actions .cancel-btn { flex: 1; }
+  .src-sheet .fs-actions .src-btn { flex: 2; margin-bottom: 0; }
+  .src-sheet .panel .iCloud-tip {
+    background: var(--bg3); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px; margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.5;
+  }
+  .src-sheet .panel .iCloud-tip b { color: var(--text); }
   @media (min-width: 761px) {
     .src-sheet { align-items: center; }
     .src-sheet .panel { border-radius: 16px; max-width: 420px; }
   }
+
+  /* "Filters" toggle pill — only visible on mobile */
+  .filter-toggle {
+    display: none;
+    background: var(--bg2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
+    align-items: center; gap: 6px; min-height: 40px; white-space:nowrap;
+  }
+  .filter-toggle .badge {
+    background: var(--accent); color: #08231e; font-size: 11px; font-weight: 800;
+    padding: 1px 7px; border-radius: 10px;
+  }
+  .filter-toggle:active { background: var(--bg3); }
+
+  /* FAB — only visible on mobile */
+  .fab {
+    display: none;
+    position: fixed; right: 18px; bottom: 86px; z-index: 90;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: var(--accent); color: #08231e; border: none;
+    font-size: 30px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,.45);
+    align-items: center; justify-content: center;
+  }
+  .fab:active { transform: scale(.96); }
+
+  /* Toast notification */
+  #toast {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: 110px; z-index: 95; padding: 12px 18px;
+    background: var(--bg2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    font-size: 14px; box-shadow: var(--shadow);
+    max-width: 90vw; text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  #toast.show { opacity: 1; }
 
   /* ========================= mobile ========================= */
   @media (max-width: 760px) {
@@ -325,38 +391,54 @@
     header .title { font-size: 17px; }
     header .stats { display:none; }
 
-    /* Top tabs — bigger touch targets, allow horizontal scroll */
+    /* Bottom tabs — fixed iOS-style nav */
     nav.tabs {
-      padding: 6px 8px 0;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+      background: rgba(14,22,32,.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line); border-bottom: none;
+      padding: 4px 6px;
+      padding-bottom: max(4px, env(safe-area-inset-bottom));
+      gap: 0; justify-content: space-around;
     }
-    nav.tabs::-webkit-scrollbar { display: none; }
     nav.tabs button {
-      padding: 12px 16px; font-size: 14px;
-      min-height: 44px; flex-shrink: 0;
+      flex: 1; padding: 6px 4px; font-weight: 600;
+      border-radius: 10px; border-bottom: none; min-height: 54px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      line-height: 1.1;
+    }
+    nav.tabs button .t-ic { font-size: 22px; }
+    nav.tabs button .t-lb { font-size: 11px; }
+    nav.tabs button.active {
+      border-bottom: none; color: var(--accent); background: transparent;
     }
 
-    /* Filters — horizontal scroll strip, no wrap */
+    /* Compact filter bar — search + Filters button */
     .filters {
-      padding: 10px 12px;
-      overflow-x: auto;
-      flex-wrap: nowrap;
-      -webkit-overflow-scrolling: touch;
-      gap: 8px;
-      scrollbar-width: none;
+      padding: 10px 12px; gap: 8px; flex-wrap: nowrap; align-items: center;
     }
-    .filters::-webkit-scrollbar { display: none; }
-    .filters .group { flex-shrink: 0; }
-    .filters select, .filters input { font-size: 14px; padding: 10px 12px; min-height: 38px; }
-    .filters input[type="search"] { width: 180px; }
-    .filters .clear { min-height: 38px; padding: 8px 14px; }
+    .filters .group { display: none; }                 /* hide individual filter groups */
+    .filters .group-search { display: flex; flex: 1; min-width: 0; }
+    .filters .group-search span { display: none; }
+    .filters input[type="search"] {
+      flex: 1; min-width: 0; width: 100%;
+      font-size: 16px; padding: 10px 12px; min-height: 40px;
+    }
+    .filters .clear { display: none; }
     .filters > div[style*="flex:1"] { display: none; }
-    .toolbar-btn { min-height: 38px; padding: 8px 14px; flex-shrink:0; white-space:nowrap; }
+    .filters .toolbar-btn { display: none; }            /* hide Add/Export/Hide-shots, moved to FAB / sheet */
+    .filter-toggle { display: inline-flex; }            /* show Filters button */
+    .fab { display: inline-flex; }                      /* show FAB */
 
-    /* Gallery — 2-column on small phones */
-    #gallery-view, #timeline-view, #stats-view { padding: 12px; }
+    /* Sections — extra bottom padding so fixed bottom tabs don't cover content */
+    main { padding-bottom: 0; }
+    #gallery-view, #timeline-view, #stats-view {
+      padding: 12px 12px max(82px, calc(72px + env(safe-area-inset-bottom)));
+    }
+    /* Map view extends full-bleed; tab bar overlays bottom translucently */
+
+    /* Gallery — denser */
     .gallery-grid { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
     .timeline-row { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
     .stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -385,13 +467,17 @@
     #setup .pickbtn-row { flex-direction: column; width: 100%; max-width: 360px; }
     #setup .pickbtn { width: 100%; min-height: 56px; font-size: 16px; }
 
-    /* Leaflet popup — bigger thumbnails */
+    /* FAB nudges up over the bottom tab bar */
+    .fab { bottom: calc(72px + env(safe-area-inset-bottom)); }
+    #toast { bottom: calc(96px + env(safe-area-inset-bottom)); }
+
+    /* Leaflet popup */
     .leaflet-popup-content { max-width: 240px; }
     .leaflet-popup-content img { width: 100%; }
     .leaflet-popup-content .popup-more img { width: 44px; height: 44px; }
   }
 
-  /* extra small */
+  /* extra small phones */
   @media (max-width: 380px) {
     .gallery-grid { grid-template-columns: 1fr 1fr; }
     .stat-grid { grid-template-columns: 1fr; }
@@ -415,10 +501,10 @@
   </header>
 
   <nav class="tabs">
-    <button data-tab="map" class="active">🗺️ Map</button>
-    <button data-tab="timeline">📅 Timeline</button>
-    <button data-tab="gallery">🖼️ Gallery</button>
-    <button data-tab="stats">📊 Stats</button>
+    <button data-tab="map" class="active"><span class="t-ic">🗺️</span><span class="t-lb">Map</span></button>
+    <button data-tab="timeline"><span class="t-ic">📅</span><span class="t-lb">Timeline</span></button>
+    <button data-tab="gallery"><span class="t-ic">🖼️</span><span class="t-lb">Gallery</span></button>
+    <button data-tab="stats"><span class="t-ic">📊</span><span class="t-lb">Stats</span></button>
   </nav>
 
   <div class="filters">
@@ -444,9 +530,13 @@
       <span>Water</span>
       <select id="f-water"><option value="">All</option></select>
     </div>
-    <div class="group">
+    <div class="group group-search">
       <input type="search" id="f-search" placeholder="Search notes / filename" />
     </div>
+    <button class="filter-toggle" id="filter-toggle">
+      <span>⚙︎ Filters</span>
+      <span class="badge" id="filter-badge" style="display:none;">0</span>
+    </button>
     <button class="clear" id="f-clear">Reset</button>
     <label class="group" style="cursor:pointer;">
       <input type="checkbox" id="f-group" checked style="accent-color:var(--accent);">
@@ -490,12 +580,48 @@
     <button class="skip" id="skip-btn">Skip for now</button>
   </div>
 
+  <button class="fab" id="fab-add" aria-label="Add photos">+</button>
+  <div id="toast"></div>
+
+  <div id="filter-sheet" class="src-sheet">
+    <div class="panel">
+      <h3>Filters</h3>
+      <div class="fs-row"><label>Species</label>
+        <select id="fs-species"><option value="">All</option></select></div>
+      <div class="fs-row"><label>Season</label>
+        <select id="fs-season">
+          <option value="">All</option>
+          <option value="spring">Spring (Mar–May)</option>
+          <option value="summer">Summer (Jun–Aug)</option>
+          <option value="fall">Fall (Sep–Nov)</option>
+          <option value="winter">Winter (Dec–Feb)</option>
+        </select></div>
+      <div class="fs-row"><label>Year</label>
+        <select id="fs-year"><option value="">All</option></select></div>
+      <div class="fs-row"><label>Water</label>
+        <select id="fs-water"><option value="">All</option></select></div>
+      <div class="fs-row"><label class="toggle-row">
+        <input type="checkbox" id="fs-group" checked> Group duplicate photos of the same fish
+      </label></div>
+      <div class="fs-row"><label class="toggle-row">
+        <input type="checkbox" id="fs-hidden"> Show hidden photos
+      </label></div>
+
+      <div class="fs-actions">
+        <button class="cancel-btn" id="fs-reset">Reset all</button>
+        <button class="src-btn" id="fs-done" style="background:var(--accent); color:#08231e; justify-content:center; min-height:48px; margin-bottom:0;">
+          <span class="lbl"><b>Done</b></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="src-sheet" class="src-sheet">
     <div class="panel">
       <h3>Add photos to your catalog</h3>
       <button class="src-btn" id="src-library">
         <span class="icon">🖼️</span>
-        <span class="lbl"><b>Choose from Photos</b><small>Pick from your camera roll or albums</small></span>
+        <span class="lbl"><b>Choose from Photos</b><small>Pick multiple from your camera roll or albums</small></span>
       </button>
       <button class="src-btn" id="src-camera">
         <span class="icon">📷</span>
@@ -505,6 +631,12 @@
         <span class="icon">📁</span>
         <span class="lbl"><b>Pick a folder</b><small>Bulk import (desktop browsers)</small></span>
       </button>
+      <div class="iCloud-tip" id="ios-tip" style="display:none;">
+        <b>Bulk-importing from iPhone?</b> iOS Safari limits how many photos one picker can select.
+        For large albums, save them to <b>iCloud Drive → Files</b> and use <b>Choose from Photos → Browse</b>
+        — you can select all files in a folder at once. Or just keep tapping <b>+ Add</b> to import in batches;
+        new photos merge into your catalog automatically.
+      </div>
       <div class="cancel-row"><button class="cancel-btn" id="src-cancel">Cancel</button></div>
     </div>
   </div>
@@ -867,6 +999,27 @@ function updateToolbarCounts(){
     btn.style.display = screenshotsToHide ? '' : 'none';
     if (cnt) cnt.textContent = screenshotsToHide ? `(${screenshotsToHide})` : '';
   }
+  // Filters badge — count active filters
+  const f = state.filters;
+  let active = 0;
+  if (f.species) active++; if (f.season) active++; if (f.year) active++;
+  if (f.water) active++;   if (state.showHidden) active++;
+  if (!state.groupingEnabled) active++;
+  const badge = document.getElementById('filter-badge');
+  if (badge){
+    badge.style.display = active ? '' : 'none';
+    badge.textContent = active;
+  }
+}
+
+let toastTimer = null;
+function toast(msg, ms){
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.innerHTML = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms || 3500);
 }
 
 function updateHeaderStats(){
@@ -891,14 +1044,19 @@ function populateFilterOptions(){
   const all = Object.values(state.catalog);
   const set = (id, items) => {
     const sel = document.getElementById(id);
+    if (!sel) return;
     const cur = sel.value;
     sel.innerHTML = '<option value="">All</option>' +
       [...items].sort().map(v=>`<option value="${escAttr(v)}" ${v===cur?'selected':''}>${escHTML(v)}</option>`).join('');
   };
-  set('f-species', new Set(all.map(c=>c.species).filter(Boolean)));
-  set('f-water',   new Set(all.map(c=>c.waterType).filter(Boolean)));
-  const years = new Set(all.map(c=>c.dateISO ? new Date(c.dateISO).getFullYear() : null).filter(Boolean));
-  set('f-year', [...years].map(String).sort().reverse());
+  const speciesSet = new Set(all.map(c=>c.species).filter(Boolean));
+  const waterSet   = new Set(all.map(c=>c.waterType).filter(Boolean));
+  const years      = new Set(all.map(c=>c.dateISO ? new Date(c.dateISO).getFullYear() : null).filter(Boolean));
+  const yearList   = [...years].map(String).sort().reverse();
+  // Populate both the inline desktop selects and the mobile filter-sheet selects
+  set('f-species', speciesSet);  set('fs-species', speciesSet);
+  set('f-water',   waterSet);    set('fs-water',   waterSet);
+  set('f-year',    yearList);    set('fs-year',    yearList);
 }
 
 /* MAP */
@@ -1252,14 +1410,14 @@ function init(){
   loadStore();
   migrate();
 
-  // iOS Safari can't pick a folder (no webkitdirectory) — hide that option.
+  // iOS Safari can't pick a folder (no webkitdirectory) — hide that option,
+  // and surface a helpful bulk-import tip in the source picker.
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS){
-    const folderBtn = document.getElementById('pick-folder-btn');
-    const sheetFolder = document.getElementById('src-folder');
-    if (folderBtn) folderBtn.style.display = 'none';
-    if (sheetFolder) sheetFolder.style.display = 'none';
+    document.getElementById('pick-folder-btn')?.style.setProperty('display','none');
+    document.getElementById('src-folder')     ?.style.setProperty('display','none');
+    document.getElementById('ios-tip')        ?.style.setProperty('display','block');
   }
 
   // tabs
@@ -1304,6 +1462,7 @@ function init(){
   // Shared file-input handler for all sources
   const handlePickedFiles = async (files) => {
     if (!files || !files.length) return;
+    const before = Object.keys(state.catalog).length;
     showSetup();           // show progress overlay during ingest
     setProgress(`Reading ${files.length} files…`);
     try {
@@ -1312,9 +1471,23 @@ function init(){
       console.error('ingest failed', err);
       setProgress('Error: ' + (err && err.message || err));
     }
+    const added = Object.keys(state.catalog).length - before;
     setTimeout(() => {
       dismissSetup();
       if (state.map) setTimeout(() => state.map.invalidateSize(), 50);
+      // Auto-prompt to hide newly-imported likely screenshots, in batches
+      const newShots = Object.values(state.catalog).filter(c => c.likelyScreenshot && !c.hidden).length;
+      if (added > 0 && newShots > 0){
+        if (confirm(`Imported ${added} photo${added===1?'':'s'}.\n\n${newShots} look${newShots===1?'s':''} like screenshots / social-media saves (no camera GPS or timestamp). Hide ${newShots===1?'it':'them'} from the catalog now?`)){
+          Object.values(state.catalog).forEach(c => { if (c.likelyScreenshot && !c.hidden) c.hidden = true; });
+          saveStore();
+          rebuild();
+        }
+      }
+      const msg = added > 0
+        ? `🎣 Added <b>${added}</b> new photo${added===1?'':'s'}.${isIOS ? ' Tap <b>+</b> to add more.' : ''}`
+        : `Re-read ${files.length} photo${files.length===1?'':'s'}.`;
+      toast(msg, 4500);
     }, 400);
   };
   ['folder-input','library-input','camera-input'].forEach(id => {
@@ -1330,11 +1503,53 @@ function init(){
   const openSheet = () => sheet.classList.add('show');
   const closeSheet = () => sheet.classList.remove('show');
   document.getElementById('add-btn').addEventListener('click', openSheet);
+  document.getElementById('fab-add') .addEventListener('click', openSheet);
   document.getElementById('src-library').addEventListener('click', () => { closeSheet(); document.getElementById('library-input').click(); });
   document.getElementById('src-camera') .addEventListener('click', () => { closeSheet(); document.getElementById('camera-input').click(); });
   document.getElementById('src-folder') .addEventListener('click', () => { closeSheet(); document.getElementById('folder-input').click(); });
   document.getElementById('src-cancel') .addEventListener('click', closeSheet);
   sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
+
+  // Filter bottom sheet — mirrors the inline filter selects so changes sync both ways
+  const fSheet = document.getElementById('filter-sheet');
+  const openFSheet = () => {
+    // Pull current values into the sheet's controls
+    document.getElementById('fs-species').value = document.getElementById('f-species').value;
+    document.getElementById('fs-season') .value = document.getElementById('f-season').value;
+    document.getElementById('fs-year')   .value = document.getElementById('f-year').value;
+    document.getElementById('fs-water')  .value = document.getElementById('f-water').value;
+    document.getElementById('fs-group')  .checked = state.groupingEnabled;
+    document.getElementById('fs-hidden') .checked = !!state.showHidden;
+    fSheet.classList.add('show');
+  };
+  const closeFSheet = () => fSheet.classList.remove('show');
+  document.getElementById('filter-toggle').addEventListener('click', openFSheet);
+  document.getElementById('fs-done').addEventListener('click', () => {
+    state.filters.species = document.getElementById('fs-species').value;
+    state.filters.season  = document.getElementById('fs-season').value;
+    state.filters.year    = document.getElementById('fs-year').value;
+    state.filters.water   = document.getElementById('fs-water').value;
+    state.groupingEnabled = document.getElementById('fs-group').checked;
+    state.showHidden      = document.getElementById('fs-hidden').checked;
+    // Keep top-bar selects in sync (so desktop reflects too)
+    document.getElementById('f-species').value = state.filters.species;
+    document.getElementById('f-season') .value = state.filters.season;
+    document.getElementById('f-year')   .value = state.filters.year;
+    document.getElementById('f-water')  .value = state.filters.water;
+    document.getElementById('f-group')  .checked = state.groupingEnabled;
+    document.getElementById('f-hidden') .checked = state.showHidden;
+    closeFSheet();
+    rebuild();
+  });
+  document.getElementById('fs-reset').addEventListener('click', () => {
+    document.getElementById('fs-species').value = '';
+    document.getElementById('fs-season') .value = '';
+    document.getElementById('fs-year')   .value = '';
+    document.getElementById('fs-water')  .value = '';
+    document.getElementById('fs-group')  .checked = true;
+    document.getElementById('fs-hidden') .checked = false;
+  });
+  fSheet.addEventListener('click', e => { if (e.target === fSheet) closeFSheet(); });
 
   document.getElementById('export-btn').addEventListener('click', exportJSON);
 
