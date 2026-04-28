@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fish Catalog</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+<style>
+  :root {
+    --bg: #0e1620;
+    --bg2: #15212e;
+    --bg3: #1d2c3c;
+    --line: #2a3a4d;
+    --text: #e8eef5;
+    --muted: #8aa0b6;
+    --accent: #4dd2c0;
+    --accent2: #ffb84d;
+    --pin-spring: #6cd47a;
+    --pin-summer: #ffb84d;
+    --pin-fall: #d97a3c;
+    --pin-winter: #6ec5e9;
+    --shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+  a { color: var(--accent); }
+
+  #app { display:flex; flex-direction:column; height:100vh; }
+
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 22px; background: linear-gradient(180deg,#16222f, #0e1620);
+    border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  header .title { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; }
+  header .title .logo { font-size:24px; }
+  header .stats { display:flex; gap:18px; color:var(--muted); font-size:13px; }
+  header .stats b { color: var(--text); font-size: 15px; }
+
+  /* Tabs */
+  nav.tabs { display:flex; gap:4px; padding: 8px 18px 0;
+    background: var(--bg); border-bottom:1px solid var(--line); flex-shrink:0; }
+  nav.tabs button {
+    background: transparent; color: var(--muted); border:none; padding: 10px 18px;
+    border-radius: 8px 8px 0 0; cursor:pointer; font-size: 14px; font-weight: 600;
+    border-bottom: 2px solid transparent;
+  }
+  nav.tabs button:hover { color: var(--text); background: var(--bg2); }
+  nav.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  /* Filters */
+  .filters {
+    display:flex; flex-wrap:wrap; gap:10px; padding: 12px 18px;
+    background: var(--bg); border-bottom:1px solid var(--line); flex-shrink:0; align-items:center;
+  }
+  .filters .group { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); }
+  .filters select, .filters input {
+    background: var(--bg2); color: var(--text); border:1px solid var(--line);
+    border-radius: 6px; padding: 6px 10px; font-size: 13px;
+  }
+  .filters input[type="search"] { width: 200px; }
+  .filters .clear {
+    background:transparent; color:var(--muted); border:1px solid var(--line);
+    border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer;
+  }
+  .filters .clear:hover { color: var(--text); border-color:var(--accent); }
+
+  main { flex:1; overflow:hidden; position:relative; }
+  main > section { display:none; height: 100%; overflow:auto; }
+  main > section.active { display:block; }
+
+  /* Map view */
+  #map-view { padding: 0; }
+  #map { height: 100%; width: 100%; background:#1a2733; }
+  .leaflet-popup-content-wrapper { background: #1d2c3c; color: var(--text); border-radius:8px; }
+  .leaflet-popup-content { margin: 10px 12px; font-size: 13px; max-width: 220px; }
+  .leaflet-popup-content img { width: 200px; height:auto; border-radius:6px; display:block; margin-bottom: 6px; }
+  .leaflet-popup-tip { background: #1d2c3c; }
+  .leaflet-popup-content .sp { font-weight:700; color: var(--accent); }
+  .leaflet-popup-content .dt { color: var(--muted); font-size: 11px; }
+
+  /* Custom pin per-season */
+  .pin {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4);
+    position: relative;
+  }
+  .pin .pin-badge {
+    position: absolute; top: -6px; right: -8px;
+    background: #1d2c3c; color:#fff; font-size: 10px; font-weight: 700;
+    padding: 1px 5px; border-radius: 8px; border: 1px solid #fff;
+    line-height: 1.2;
+  }
+  .leaflet-popup-content .grp-badge {
+    background: var(--bg3); color: var(--muted); padding: 1px 6px;
+    border-radius: 8px; font-size: 11px; font-weight: 600; margin-left: 4px;
+  }
+  .leaflet-popup-content .popup-more {
+    display: flex; gap: 4px; margin-top: 6px; align-items: center;
+  }
+  .leaflet-popup-content .popup-more img {
+    width: 36px; height: 36px; object-fit: cover; border-radius: 4px; margin: 0;
+  }
+  .leaflet-popup-content .popup-more .more-num {
+    color: var(--muted); font-size: 11px; padding-left: 4px;
+  }
+
+  /* Gallery */
+  #gallery-view { padding: 18px; }
+  .gallery-grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+  .card {
+    background: var(--bg2); border: 1px solid var(--line); border-radius: 10px;
+    overflow:hidden; cursor:pointer; transition: transform .15s, border-color .15s;
+    display:flex; flex-direction:column;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .card .thumb-wrap { position: relative; }
+  .card .thumb {
+    width:100%; aspect-ratio: 1/1; background:#222; object-fit: cover; display:block;
+  }
+  .card .multi-badge {
+    position: absolute; top: 6px; right: 6px;
+    background: rgba(14,22,32,.85); color: #fff; padding: 2px 8px;
+    border-radius: 12px; font-size: 11px; font-weight: 700;
+    backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.15);
+  }
+  .card .multi-badge::before { content: "📷 "; font-size: 10px; }
+  .card.hidden { opacity: .42; border-style: dashed; }
+  .card.hidden::after {
+    content: "hidden"; position:absolute; bottom: 6px; left: 6px;
+    background: rgba(0,0,0,.65); color:#fff; font-size:10px; font-weight:700;
+    padding:2px 6px; border-radius:4px;
+  }
+  .card { position: relative; }
+  .card .meta { padding: 8px 10px; }
+  .card .meta .sp {
+    font-weight:700; font-size:13px; color:var(--text); margin-bottom:2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .card .meta .dt { font-size: 11px; color: var(--muted); }
+  .card .meta .nogps { font-size: 11px; color: var(--pin-fall); margin-top:2px; }
+  .card.untagged .meta .sp { color: var(--muted); font-style: italic; }
+
+  /* Timeline */
+  #timeline-view { padding: 18px 22px; }
+  .timeline-month {
+    margin-bottom: 30px;
+  }
+  .timeline-month h3 {
+    margin: 0 0 12px; padding: 6px 12px;
+    background: var(--bg2); border-radius: 6px; display:inline-block;
+    font-size: 14px; color: var(--accent);
+  }
+  .timeline-row {
+    display:grid; gap:10px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+  .timeline-row .card .thumb { aspect-ratio: 1/1; }
+
+  /* Stats */
+  #stats-view { padding: 24px; }
+  .stat-grid {
+    display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-bottom: 24px;
+  }
+  .stat-tile {
+    background: var(--bg2); border:1px solid var(--line); border-radius: 12px; padding: 16px;
+  }
+  .stat-tile .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-tile .value { font-size: 28px; font-weight: 800; color: var(--text); margin-top: 4px; }
+  .stat-tile .sub { color: var(--muted); font-size: 12px; }
+
+  .stat-section { margin-bottom: 24px; }
+  .stat-section h3 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 10px; }
+  .bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 13px; }
+  .bar .lbl { width: 160px; color: var(--text); }
+  .bar .track { flex:1; height: 8px; background: var(--bg3); border-radius: 4px; overflow:hidden; }
+  .bar .fill { height: 100%; background: var(--accent); }
+  .bar .num { width: 36px; text-align:right; color: var(--muted); font-size:12px; }
+
+  /* Setup overlay */
+  #setup {
+    position:absolute; inset:0; background: rgba(14,22,32,.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index: 1000; text-align:center; padding: 24px;
+  }
+  #setup h1 { font-size: 32px; margin: 0 0 8px; }
+  #setup p { color: var(--muted); max-width: 520px; margin: 0 0 22px; line-height: 1.55; }
+  #setup .pickbtn-row {
+    display: flex; gap: 10px; flex-direction: column;
+    width: 100%; max-width: 380px; align-items: center;
+  }
+  #setup .pickbtn {
+    background: var(--accent); color: #08231e; border:none; padding: 14px 22px;
+    border-radius: 12px; font-size: 16px; font-weight: 700; cursor:pointer;
+    box-shadow: var(--shadow); width: 100%;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    min-height: 52px;
+  }
+  #setup .pickbtn:hover { filter: brightness(1.08); }
+  #setup .pickbtn-alt {
+    background: var(--bg2); color: var(--text); border:1px solid var(--line);
+  }
+  #setup .pickbtn-alt:hover { border-color: var(--accent); background: var(--bg3); }
+  #setup .skip {
+    background: transparent; color: var(--muted); border:none; padding: 10px;
+    margin-top: 12px; cursor: pointer; font-size: 13px;
+  }
+  #setup .skip:hover { color: var(--text); }
+  #setup .progress {
+    margin-top: 18px; color: var(--muted); font-size: 13px; min-height: 18px;
+  }
+
+  /* Modal */
+  #modal { position: fixed; inset:0; background: rgba(0,0,0,.7); z-index: 2000;
+    display:none; align-items:center; justify-content:center; padding: 18px; }
+  #modal.show { display:flex; }
+  #modal .panel {
+    background: var(--bg2); border-radius: 12px; max-width: 720px; width:100%;
+    max-height: 92vh; display:flex; flex-direction:column; overflow:hidden;
+    border:1px solid var(--line); box-shadow: var(--shadow);
+  }
+  #modal .panel .ph { background:#000; }
+  #modal .panel .ph img { width: 100%; max-height: 50vh; object-fit: contain; display:block; }
+  #modal .panel .body { padding: 16px 20px; overflow:auto; }
+  #modal .panel .body h2 { margin: 0 0 4px; font-size: 18px; }
+  #modal .panel .body .file { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+  #modal .field { display:flex; flex-direction:column; gap: 4px; margin-bottom: 12px; }
+  #modal .field label { color: var(--muted); font-size: 11px; text-transform:uppercase; letter-spacing: .5px; }
+  #modal .field input, #modal .field select, #modal .field textarea {
+    background: var(--bg3); color:var(--text); border:1px solid var(--line);
+    border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: inherit;
+  }
+  #modal .field textarea { min-height: 60px; resize: vertical; }
+  #modal .meta-grid { display:grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+  #modal .info-row { color: var(--muted); font-size:12px; margin-bottom: 4px; }
+  #modal .info-row b { color: var(--text); font-weight: 600; }
+  #modal .actions { display:flex; gap: 8px; justify-content: flex-end; padding: 14px 20px; border-top:1px solid var(--line); }
+  #modal .actions button {
+    border:none; padding: 9px 18px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor:pointer;
+  }
+  #modal .actions .save { background: var(--accent); color:#08231e; }
+  #modal .actions .save:hover { filter: brightness(1.08); }
+  #modal .actions .cancel { background: transparent; color: var(--muted); border:1px solid var(--line); }
+  #modal .actions .hide-btn {
+    background: transparent; color: #ff8888; border: 1px solid #5a3038;
+    border:none; padding: 9px 14px; border-radius: 6px; font-size: 13px; cursor:pointer;
+  }
+  #modal .actions .hide-btn:hover { background: rgba(255,80,80,.1); }
+  #modal .actions .hide-btn.unhide { color: #88c2ff; }
+  #modal .m-strip { display:none; margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--line); }
+  #modal .m-strip img {
+    width: 64px; height: 64px; object-fit: cover; border-radius: 6px;
+    margin-right: 6px; cursor:pointer; border: 2px solid transparent;
+    vertical-align: middle;
+  }
+  #modal .m-strip img:hover { border-color: var(--muted); }
+  #modal .m-strip img.active { border-color: var(--accent); }
+  #modal .m-strip .apply-all-wrap { margin-top: 10px; }
+  #modal .m-strip .apply-all {
+    background: var(--bg3); color: var(--text); border: 1px solid var(--line);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  }
+  #modal .m-strip .apply-all:hover { border-color: var(--accent); }
+
+  .empty {
+    text-align:center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty h2 { color: var(--text); margin: 0 0 8px; }
+
+  .toolbar-btn {
+    background: var(--bg3); color: var(--text); border:1px solid var(--line);
+    border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor:pointer;
+  }
+  .toolbar-btn:hover { border-color: var(--accent); }
+  .toolbar-btn-primary {
+    background: var(--accent); color: #08231e; border-color: var(--accent); font-weight: 700;
+  }
+  .toolbar-btn-primary:hover { filter: brightness(1.08); border-color: var(--accent); }
+
+  /* Source-picker bottom sheet (mobile) / center popup (desktop) */
+  .src-sheet { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1500;
+    display: none; align-items: flex-end; justify-content: center; }
+  .src-sheet.show { display: flex; }
+  .src-sheet .panel {
+    background: var(--bg2); width: 100%; max-width: 480px;
+    border-radius: 16px 16px 0 0; padding: 18px; padding-bottom: max(18px, env(safe-area-inset-bottom));
+    border: 1px solid var(--line); animation: sheetUp .2s ease-out;
+  }
+  @keyframes sheetUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .src-sheet .panel h3 { margin: 0 0 14px; font-size: 16px; }
+  .src-sheet .src-btn {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    background: var(--bg3); color: var(--text); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 16px; font-size: 15px; cursor: pointer;
+    margin-bottom: 8px; min-height: 52px; text-align: left;
+  }
+  .src-btn:hover { border-color: var(--accent); }
+  .src-btn .icon { font-size: 22px; width: 28px; text-align: center; }
+  .src-btn .lbl b { display:block; }
+  .src-btn .lbl small { color: var(--muted); font-size: 12px; }
+  .src-sheet .cancel-row { margin-top: 6px; }
+  .src-sheet .cancel-btn {
+    width: 100%; background: transparent; color: var(--muted); border: none;
+    padding: 12px; cursor: pointer; font-size: 14px;
+  }
+  @media (min-width: 761px) {
+    .src-sheet { align-items: center; }
+    .src-sheet .panel { border-radius: 16px; max-width: 420px; }
+  }
+
+  /* ========================= mobile ========================= */
+  @media (max-width: 760px) {
+    html, body { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+    header { padding: 10px 14px; }
+    header .title { font-size: 17px; }
+    header .stats { display:none; }
+
+    /* Top tabs — bigger touch targets, allow horizontal scroll */
+    nav.tabs {
+      padding: 6px 8px 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    nav.tabs::-webkit-scrollbar { display: none; }
+    nav.tabs button {
+      padding: 12px 16px; font-size: 14px;
+      min-height: 44px; flex-shrink: 0;
+    }
+
+    /* Filters — horizontal scroll strip, no wrap */
+    .filters {
+      padding: 10px 12px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      gap: 8px;
+      scrollbar-width: none;
+    }
+    .filters::-webkit-scrollbar { display: none; }
+    .filters .group { flex-shrink: 0; }
+    .filters select, .filters input { font-size: 14px; padding: 10px 12px; min-height: 38px; }
+    .filters input[type="search"] { width: 180px; }
+    .filters .clear { min-height: 38px; padding: 8px 14px; }
+    .filters > div[style*="flex:1"] { display: none; }
+    .toolbar-btn { min-height: 38px; padding: 8px 14px; flex-shrink:0; white-space:nowrap; }
+
+    /* Gallery — 2-column on small phones */
+    #gallery-view, #timeline-view, #stats-view { padding: 12px; }
+    .gallery-grid { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .timeline-row { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    .stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-tile { padding: 12px; }
+    .stat-tile .value { font-size: 22px; }
+    .bar .lbl { width: 110px; font-size: 12px; }
+
+    /* Modal — full screen sheet on mobile */
+    #modal { padding: 0; align-items: stretch; justify-content: stretch; }
+    #modal .panel { max-width: 100%; max-height: 100%; height: 100%; border-radius: 0; }
+    #modal .panel .ph img { max-height: 40vh; }
+    #modal .meta-grid { grid-template-columns: 1fr; }
+    #modal .field input, #modal .field select, #modal .field textarea {
+      font-size: 16px; padding: 12px; min-height: 44px;
+    }
+    #modal .actions { flex-wrap: wrap; gap: 6px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+    #modal .actions > div[style*="flex:1"] { display: none; }
+    #modal .actions button { min-height: 44px; flex: 1 1 auto; }
+    #modal .actions .save { flex: 2 1 auto; }
+    #modal .m-strip img { width: 56px; height: 56px; }
+
+    /* Setup overlay — vertical stack, bigger */
+    #setup { padding: 22px 18px; }
+    #setup h1 { font-size: 26px; }
+    #setup p { font-size: 15px; }
+    #setup .pickbtn-row { flex-direction: column; width: 100%; max-width: 360px; }
+    #setup .pickbtn { width: 100%; min-height: 56px; font-size: 16px; }
+
+    /* Leaflet popup — bigger thumbnails */
+    .leaflet-popup-content { max-width: 240px; }
+    .leaflet-popup-content img { width: 100%; }
+    .leaflet-popup-content .popup-more img { width: 44px; height: 44px; }
+  }
+
+  /* extra small */
+  @media (max-width: 380px) {
+    .gallery-grid { grid-template-columns: 1fr 1fr; }
+    .stat-grid { grid-template-columns: 1fr; }
+  }
+
+  /* desktop refinements */
+  @media (min-width: 761px) {
+    #setup .pickbtn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="title"><span class="logo">🎣</span> Fish Catalog <span style="color:var(--muted); font-weight:400; margin-left:6px;">— Zach</span></div>
+    <div class="stats" id="header-stats">
+      <div><b id="stat-total">0</b> catches</div>
+      <div><b id="stat-species">0</b> species</div>
+      <div><b id="stat-spots">0</b> spots</div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="map" class="active">🗺️ Map</button>
+    <button data-tab="timeline">📅 Timeline</button>
+    <button data-tab="gallery">🖼️ Gallery</button>
+    <button data-tab="stats">📊 Stats</button>
+  </nav>
+
+  <div class="filters">
+    <div class="group">
+      <span>Species</span>
+      <select id="f-species"><option value="">All</option></select>
+    </div>
+    <div class="group">
+      <span>Season</span>
+      <select id="f-season">
+        <option value="">All</option>
+        <option value="spring">Spring (Mar–May)</option>
+        <option value="summer">Summer (Jun–Aug)</option>
+        <option value="fall">Fall (Sep–Nov)</option>
+        <option value="winter">Winter (Dec–Feb)</option>
+      </select>
+    </div>
+    <div class="group">
+      <span>Year</span>
+      <select id="f-year"><option value="">All</option></select>
+    </div>
+    <div class="group">
+      <span>Water</span>
+      <select id="f-water"><option value="">All</option></select>
+    </div>
+    <div class="group">
+      <input type="search" id="f-search" placeholder="Search notes / filename" />
+    </div>
+    <button class="clear" id="f-clear">Reset</button>
+    <label class="group" style="cursor:pointer;">
+      <input type="checkbox" id="f-group" checked style="accent-color:var(--accent);">
+      <span style="color:var(--text)">Group duplicates</span>
+    </label>
+    <label class="group" style="cursor:pointer;">
+      <input type="checkbox" id="f-hidden" style="accent-color:var(--accent);">
+      <span style="color:var(--text)">Show hidden <span id="hidden-count" style="color:var(--muted)"></span></span>
+    </label>
+    <div style="flex:1"></div>
+    <button class="toolbar-btn" id="hide-shots-btn" title="Hide all photos that look like screenshots / social-media saves" style="display:none;">🧹 Hide screenshots <span id="hide-shots-count"></span></button>
+    <button class="toolbar-btn toolbar-btn-primary" id="add-btn" title="Add photos from library, camera, or folder">＋ Add photos</button>
+    <button class="toolbar-btn" id="export-btn" title="Download catalog data as JSON">⬇ Export</button>
+  </div>
+
+  <main>
+    <section id="map-view" class="active">
+      <div id="map"></div>
+    </section>
+    <section id="timeline-view"></section>
+    <section id="gallery-view"></section>
+    <section id="stats-view"></section>
+  </main>
+
+  <div id="setup">
+    <h1>🎣 Your Fish Catalog</h1>
+    <p>Add your fish photos to map your catches and track them over time.
+       Everything happens on your device — nothing is uploaded anywhere.</p>
+
+    <input type="file" id="folder-input"  webkitdirectory directory multiple style="display:none;">
+    <input type="file" id="library-input" accept="image/*" multiple                style="display:none;">
+    <input type="file" id="camera-input"  accept="image/*" capture="environment"   style="display:none;">
+
+    <div class="pickbtn-row">
+      <button class="pickbtn" id="pick-library-btn">🖼️ Choose photos</button>
+      <button class="pickbtn pickbtn-alt" id="pick-folder-btn">📁 Pick a folder</button>
+      <button class="pickbtn pickbtn-alt" id="pick-camera-btn">📷 Take a photo</button>
+    </div>
+
+    <div class="progress" id="setup-progress"></div>
+    <button class="skip" id="skip-btn">Skip for now</button>
+  </div>
+
+  <div id="src-sheet" class="src-sheet">
+    <div class="panel">
+      <h3>Add photos to your catalog</h3>
+      <button class="src-btn" id="src-library">
+        <span class="icon">🖼️</span>
+        <span class="lbl"><b>Choose from Photos</b><small>Pick from your camera roll or albums</small></span>
+      </button>
+      <button class="src-btn" id="src-camera">
+        <span class="icon">📷</span>
+        <span class="lbl"><b>Take a photo</b><small>Capture a new fish right now</small></span>
+      </button>
+      <button class="src-btn" id="src-folder">
+        <span class="icon">📁</span>
+        <span class="lbl"><b>Pick a folder</b><small>Bulk import (desktop browsers)</small></span>
+      </button>
+      <div class="cancel-row"><button class="cancel-btn" id="src-cancel">Cancel</button></div>
+    </div>
+  </div>
+
+  <div id="modal">
+    <div class="panel">
+      <div class="ph"><img id="m-img" alt=""></div>
+      <div class="body">
+        <h2 id="m-title">Edit catch</h2>
+        <div class="file" id="m-file"></div>
+        <div class="info-row" id="m-info"></div>
+        <div class="meta-grid">
+          <div class="field">
+            <label>Species</label>
+            <input type="text" id="m-species" list="species-options" placeholder="e.g. Largemouth Bass" />
+            <datalist id="species-options">
+              <option value="Largemouth Bass">
+              <option value="Smallmouth Bass">
+              <option value="Rock Bass">
+              <option value="Walleye">
+              <option value="Yellow Perch">
+              <option value="Bluegill">
+              <option value="Black Crappie">
+              <option value="White Crappie">
+              <option value="Northern Pike">
+              <option value="Muskellunge">
+              <option value="Brown Trout">
+              <option value="Rainbow Trout">
+              <option value="Brook Trout">
+              <option value="Lake Trout">
+              <option value="Channel Catfish">
+              <option value="Carp">
+              <option value="Bowfin">
+              <option value="Bullhead">
+              <option value="Sunfish">
+              <option value="Pumpkinseed">
+              <option value="Other">
+              <option value="Not a catch">
+            </datalist>
+          </div>
+          <div class="field">
+            <label>Water type</label>
+            <select id="m-water">
+              <option value="">— pick —</option>
+              <option>Pond</option>
+              <option>Lake</option>
+              <option>River</option>
+              <option>Creek/Stream</option>
+              <option>Canal</option>
+              <option>Marina</option>
+              <option>Bay/Big Water</option>
+              <option>Reservoir</option>
+              <option>Unknown</option>
+            </select>
+          </div>
+        </div>
+        <div class="meta-grid">
+          <div class="field">
+            <label>Size (in)</label>
+            <input type="number" step="0.1" id="m-size" placeholder="e.g. 16">
+          </div>
+          <div class="field">
+            <label>Gear / lure</label>
+            <input type="text" id="m-gear" placeholder="e.g. spinnerbait">
+          </div>
+        </div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea id="m-notes" placeholder="Where, conditions, story…"></textarea>
+        </div>
+        <div id="m-strip" class="m-strip"></div>
+      </div>
+      <div class="actions">
+        <button class="hide-btn" id="m-hide" title="Hide this photo from your catalog (mark as not a real catch)">🗑 Hide</button>
+        <div style="flex:1"></div>
+        <button class="cancel" id="m-cancel">Cancel</button>
+        <button class="save" id="m-save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- exifr — pure JS EXIF reader supporting JPEG/PNG/HEIC -->
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script>
+/* ============================================================
+   FISH CATALOG  —  single-file local app
+   Reads EXIF (GPS, datetime) from images in a folder you pick once,
+   merges with pre-tagged species data + your edits, then renders
+   a map / timeline / gallery / stats over the catch.
+   ============================================================ */
+
+// Pre-tagged species/details for photos already reviewed.
+// Anything not here will start untagged but still appear in catalog.
+const PRE_TAGGED = {
+  "IMG_1836.JPG":  { species:"Largemouth Bass", waterType:"Pond",      notes:"Shore catch near a dock." },
+  "IMG_3172.JPEG": { species:"Largemouth Bass", waterType:"Pond/Lake", notes:"Sunny summer day." },
+  "IMG_5119.JPG":  { species:"Walleye",         waterType:"Canal",     notes:"Spring catch — marina/canal." },
+  "IMG_2632.JPG":  { species:"Largemouth Bass", waterType:"Pond",      notes:"" },
+  "IMG_3490.JPEG": { species:"Yellow Perch",    waterType:"Unknown",   notes:"Late-fall / early-spring grass." },
+  "IMG_3313.JPEG": { species:"Largemouth Bass", waterType:"Unknown",   notes:"Caught on spinning rod." },
+  "IMG_3618.JPEG": { species:"Brown Trout",     waterType:"River",     notes:"Fall day — leaves on the bank, landed in net." },
+  "IMG_4826.JPEG": { species:"Smallmouth Bass", waterType:"Lake",      notes:"From the boat." },
+  "IMG_3717.PNG":  { species:"Muskellunge",     waterType:"Big Water", notes:"Cold-weather musky." },
+  "IMG_8046.JPEG": { species:"Largemouth Bass", waterType:"Lake",      notes:"Spring boat catch." },
+  "IMG_4983.JPEG": { species:"Largemouth Bass", waterType:"Lake",      notes:"Cool-weather catch." },
+  "IMG_5482.JPEG": { species:"Black Crappie",   waterType:"Pond/Lake", notes:"Night fishing." },
+  "IMG_2206.JPEG": { species:"Walleye",         waterType:"Canal",     notes:"Spring." },
+  "IMG_1721.PNG":  { species:"Smallmouth Bass", waterType:"Lake",      notes:"Multi-bass boat day." },
+};
+
+const STORE_KEY = "fishCatalog.v1";
+
+const state = {
+  // catalog: filename -> { species, waterType, notes, lat, lon, dateISO, exifAttempted, sizeIn, gear, ... }
+  catalog: {},
+  filtered: [],
+  groups: [],            // array of catch-groups (each is an array of catalog entries)
+  groupingEnabled: true,
+  showHidden: false,
+  activeTab: 'map',
+  filters: { species:'', season:'', year:'', water:'', search:'' },
+  map: null,
+  cluster: null,
+  imgUrlMap: {}, // filename -> URL for files (object URLs from picker)
+};
+
+// Duplicate-detection thresholds
+const DEDUPE_TIME_MS  = 5 * 60 * 1000; // 5 min
+const DEDUPE_DIST_M   = 75;            // 75m
+
+/* ---------- persistence ---------- */
+function loadStore(){
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) state.catalog = JSON.parse(raw) || {};
+  } catch(e) { console.warn("load fail", e); }
+}
+function saveStore(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state.catalog)); }
+  catch(e){ console.warn("save fail", e); }
+}
+// Migrate v1 catalog entries (which had wrong-hemisphere GPS due to a parser
+// bug). Clears lat/lon and exifAttempted so a Rescan will re-extract them.
+// Preserves all user-edited species/notes/size/gear.
+function migrate(){
+  let migrated = 0;
+  Object.values(state.catalog).forEach(c => {
+    if (c.gpsSchema !== 'v2'){
+      if (c.lat != null || c.lon != null) migrated++;
+      c.lat = null; c.lon = null;
+      c.exifAttempted = false;
+    }
+  });
+  if (migrated){
+    saveStore();
+    state.needsRescan = migrated;
+  }
+}
+
+/* ---------- helpers ---------- */
+function seasonOf(month){ // month 1-12
+  if (month>=3 && month<=5) return 'spring';
+  if (month>=6 && month<=8) return 'summer';
+  if (month>=9 && month<=11) return 'fall';
+  return 'winter';
+}
+function seasonColor(s){
+  return ({spring:'#6cd47a', summer:'#ffb84d', fall:'#d97a3c', winter:'#6ec5e9'})[s] || '#888';
+}
+function fmtDate(iso){
+  if (!iso) return '—';
+  try { const d = new Date(iso); return d.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'}); }
+  catch(e){ return iso; }
+}
+function distMeters(lat1, lon1, lat2, lon2){
+  const R = 6371000;
+  const t = Math.PI / 180;
+  const φ1 = lat1*t, φ2 = lat2*t;
+  const dφ = (lat2-lat1)*t, dλ = (lon2-lon1)*t;
+  const a = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Bucket photos that look like the same fish: taken within 5 min AND within 75m
+// (when both have GPS), with no conflicting species tag. Returns an array of
+// arrays, each inner array sorted by date asc.
+function groupCatches(catches){
+  if (!state.groupingEnabled) return catches.map(c => [c]);
+
+  const sorted = [...catches].sort((a,b) => {
+    const da = a.dateISO ? new Date(a.dateISO).getTime() : Infinity;
+    const db = b.dateISO ? new Date(b.dateISO).getTime() : Infinity;
+    return da - db;
+  });
+
+  const groups = [];
+  outer: for (const c of sorted){
+    for (const g of groups){
+      const head = g[g.length-1]; // compare to most recent in group
+      if (!c.dateISO || !head.dateISO) continue;
+      const dt = Math.abs(new Date(c.dateISO) - new Date(head.dateISO));
+      if (dt > DEDUPE_TIME_MS) continue;
+      if (c.lat!=null && head.lat!=null){
+        if (distMeters(c.lat, c.lon, head.lat, head.lon) > DEDUPE_DIST_M) continue;
+      }
+      // Don't merge across different tagged species
+      const sa = c.species, sb = head.species;
+      if (sa && sb && sa !== sb && sa !== 'Not a catch' && sb !== 'Not a catch') continue;
+      g.push(c);
+      continue outer;
+    }
+    groups.push([c]);
+  }
+  return groups;
+}
+
+// Pick the "best" representative for a group: prefer one with species, then
+// one with GPS, else the first by date.
+function pickPrimary(group){
+  return group.find(c => c.species && c.species !== 'Not a catch')
+      || group.find(c => c.lat != null)
+      || group[0];
+}
+
+function imgSrcFor(filename){
+  // Prefer object URL from picker (most reliable). Fall back to relative path
+  // (works only when HTML is opened from inside the same folder).
+  return state.imgUrlMap[filename] || encodeURIComponent(filename).replace(/%2F/g, '/');
+}
+
+/* ---------- core ingest ---------- */
+async function ingestFiles(fileList){
+  setProgress(`Reading ${fileList.length} files…`);
+  let processed = 0;
+  const exts = /\.(jpe?g|png|heic|heif|tiff?)$/i;
+
+  for (const file of fileList){
+    if (!exts.test(file.name)) { processed++; continue; }
+
+    // Skip files we've already processed under the current detection schema
+    const prev = state.catalog[file.name];
+    if (prev && prev.exifAttempted && prev.detectVersion === 1){
+      // Refresh url mapping but skip re-read
+      try { state.imgUrlMap[file.name] = URL.createObjectURL(file); } catch(e){}
+      processed++;
+      if (processed % 25 === 0) setProgress(`Processed ${processed}/${fileList.length}…`);
+      continue;
+    }
+
+    let lat=null, lon=null, dateISO=null, make=null, model=null, dtoExisted=false;
+    // exifr.gps() is the dedicated helper — it correctly applies
+    // GPSLatitudeRef/GPSLongitudeRef so western/southern hemispheres get
+    // the right sign. (Doing pick:[GPSLatitude,GPSLongitude] drops the refs
+    // and gives wrong-hemisphere coords — the bug we're fixing.)
+    try {
+      const gps = await exifr.gps(file);
+      if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number'
+          && isFinite(gps.latitude) && isFinite(gps.longitude)
+          && Math.abs(gps.latitude) <= 90 && Math.abs(gps.longitude) <= 180){
+        lat = gps.latitude; lon = gps.longitude;
+      }
+    } catch(err){ /* no GPS — fine */ }
+
+    try {
+      const meta = await exifr.parse(file, ['DateTimeOriginal','CreateDate','Make','Model']);
+      if (meta){
+        const d = meta.DateTimeOriginal || meta.CreateDate;
+        if (d) dateISO = (d instanceof Date ? d.toISOString() : new Date(d).toISOString());
+        dtoExisted = !!meta.DateTimeOriginal;
+        make  = meta.Make  || null;
+        model = meta.Model || null;
+      }
+    } catch(err){ /* no date — fine */ }
+
+    // Fallback: file.lastModified if no EXIF date
+    if (!dateISO && file.lastModified){
+      dateISO = new Date(file.lastModified).toISOString();
+    }
+
+    // Heuristic: if it has no GPS, no camera Make/Model, and no DateTimeOriginal,
+    // it's almost certainly a screenshot or a saved web/social-media image.
+    const likelyScreenshot = (!lat && !make && !model && !dtoExisted);
+
+    // Merge with pre-tagged data + any prior user edits
+    const tag = PRE_TAGGED[file.name] || {};
+    state.catalog[file.name] = Object.assign(
+      { filename: file.name, species:'', waterType:'', notes:'', sizeIn:'', gear:'',
+        hidden:false, likelyScreenshot:false },
+      tag,
+      prev || {},
+      { lat, lon, dateISO, exifAttempted:true, gpsSchema:'v2', detectVersion:1, likelyScreenshot }
+    );
+
+    try { state.imgUrlMap[file.name] = URL.createObjectURL(file); } catch(e){}
+
+    processed++;
+    if (processed % 10 === 0) setProgress(`Read ${processed}/${fileList.length} — ${Object.keys(state.catalog).length} cataloged`);
+  }
+
+  saveStore();
+  setProgress(`Done — ${Object.keys(state.catalog).length} photos cataloged.`);
+  rebuild();
+}
+
+/* ---------- filtering ---------- */
+function applyFilters(){
+  const f = state.filters;
+  const all = Object.values(state.catalog);
+  state.filtered = all.filter(c => {
+    if (c.hidden && !state.showHidden) return false;
+    if (f.species && c.species !== f.species) return false;
+    if (f.water && c.waterType !== f.water) return false;
+    if (f.season || f.year){
+      if (!c.dateISO) return false;
+      const d = new Date(c.dateISO);
+      if (f.season && seasonOf(d.getMonth()+1) !== f.season) return false;
+      if (f.year && String(d.getFullYear()) !== f.year) return false;
+    }
+    if (f.search){
+      const s = f.search.toLowerCase();
+      const hay = [c.filename, c.species, c.waterType, c.notes, c.gear].join(' ').toLowerCase();
+      if (!hay.includes(s)) return false;
+    }
+    return true;
+  });
+  // sort by date desc when available, else by filename
+  state.filtered.sort((a,b)=>{
+    if (a.dateISO && b.dateISO) return new Date(b.dateISO) - new Date(a.dateISO);
+    if (a.dateISO) return -1; if (b.dateISO) return 1;
+    return a.filename.localeCompare(b.filename);
+  });
+}
+
+/* ---------- views ---------- */
+function rebuild(){
+  applyFilters();
+  state.groups = groupCatches(state.filtered);
+  populateFilterOptions();
+  updateHeaderStats();
+  renderMap();
+  renderTimeline();
+  renderGallery();
+  renderStats();
+  updateToolbarCounts();
+}
+
+function updateToolbarCounts(){
+  const all = Object.values(state.catalog);
+  const hiddenCount = all.filter(c => c.hidden).length;
+  const screenshotsToHide = all.filter(c => c.likelyScreenshot && !c.hidden).length;
+  const hidEl = document.getElementById('hidden-count');
+  if (hidEl) hidEl.textContent = hiddenCount ? `(${hiddenCount})` : '';
+  const btn = document.getElementById('hide-shots-btn');
+  const cnt = document.getElementById('hide-shots-count');
+  if (btn){
+    btn.style.display = screenshotsToHide ? '' : 'none';
+    if (cnt) cnt.textContent = screenshotsToHide ? `(${screenshotsToHide})` : '';
+  }
+}
+
+function updateHeaderStats(){
+  // Use grouped view for "catches" so duplicates count as one fish.
+  const allGroups = groupCatches(Object.values(state.catalog));
+  const taggedGroups = allGroups.filter(g => {
+    const p = pickPrimary(g);
+    return p.species && p.species !== 'Not a catch';
+  });
+  const species = new Set(taggedGroups.map(g => pickPrimary(g).species));
+  const spots = new Set();
+  taggedGroups.forEach(g => {
+    const p = pickPrimary(g);
+    if (p.lat != null) spots.add(`${p.lat.toFixed(3)},${p.lon.toFixed(3)}`);
+  });
+  document.getElementById('stat-total').textContent = taggedGroups.length;
+  document.getElementById('stat-species').textContent = species.size;
+  document.getElementById('stat-spots').textContent = spots.size;
+}
+
+function populateFilterOptions(){
+  const all = Object.values(state.catalog);
+  const set = (id, items) => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All</option>' +
+      [...items].sort().map(v=>`<option value="${escAttr(v)}" ${v===cur?'selected':''}>${escHTML(v)}</option>`).join('');
+  };
+  set('f-species', new Set(all.map(c=>c.species).filter(Boolean)));
+  set('f-water',   new Set(all.map(c=>c.waterType).filter(Boolean)));
+  const years = new Set(all.map(c=>c.dateISO ? new Date(c.dateISO).getFullYear() : null).filter(Boolean));
+  set('f-year', [...years].map(String).sort().reverse());
+}
+
+/* MAP */
+function renderMap(){
+  if (!state.map){
+    state.map = L.map('map', { worldCopyJump:true }).setView([42.8, -83.5], 7);
+
+    // Carto Voyager — works on file:// without a Referer header
+    // (OSM's main tile servers block file:// origins per their usage policy).
+    const street = L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+      attribution: '© OpenStreetMap contributors © CARTO'
+    });
+    const sat = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Imagery © Esri'
+    });
+    const dark = L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+      attribution: '© OpenStreetMap contributors © CARTO'
+    });
+    street.addTo(state.map);
+    L.control.layers({ 'Street': street, 'Satellite': sat, 'Dark': dark }, null,
+      { position: 'topright', collapsed: true }).addTo(state.map);
+
+    state.cluster = L.markerClusterGroup({ showCoverageOnHover:false, spiderfyOnMaxZoom:true });
+    state.map.addLayer(state.cluster);
+  }
+  state.cluster.clearLayers();
+
+  // One marker per group; primary photo is the representative.
+  const groupsWithGps = state.groups
+    .map(g => ({ g, p: pickPrimary(g) }))
+    .filter(x => x.p.lat != null && x.p.lon != null);
+  const bounds = [];
+
+  groupsWithGps.forEach(({g, p: c}) => {
+    const m = new Date(c.dateISO || Date.now()).getMonth()+1;
+    const color = seasonColor(seasonOf(m));
+    const more = g.length - 1;
+    const icon = L.divIcon({
+      html: `<div class="pin" style="background:${color}">${more>0?`<span class="pin-badge">${more+1}</span>`:''}</div>`,
+      className: '', iconSize:[22,22], iconAnchor:[11,11]
+    });
+    const mk = L.marker([c.lat, c.lon], { icon });
+    const sp = c.species || '<span style="opacity:.7">Untagged</span>';
+    const dt = fmtDate(c.dateISO);
+    const src = imgSrcFor(c.filename);
+    const moreThumbs = (g.length > 1)
+      ? `<div class="popup-more">${g.filter(x=>x.filename!==c.filename).slice(0,4).map(x=>`<img src="${imgSrcFor(x.filename)}" alt="">`).join('')}${g.length>5?`<span class="more-num">+${g.length-5}</span>`:''}</div>`
+      : '';
+    mk.bindPopup(
+      `<img src="${src}" alt="">
+       <div class="sp">${sp}${g.length>1?` <span class="grp-badge">${g.length} photos</span>`:''}</div>
+       <div class="dt">${dt}${c.waterType?(' · '+escHTML(c.waterType)):''}</div>
+       ${c.notes?`<div style="margin-top:4px">${escHTML(c.notes)}</div>`:''}
+       ${moreThumbs}
+       <div style="margin-top:6px"><a href="#" data-edit="${escAttr(c.filename)}">Edit</a></div>`
+    );
+    state.cluster.addLayer(mk);
+    bounds.push([c.lat, c.lon]);
+  });
+
+  if (bounds.length){
+    state.map.fitBounds(bounds, { padding:[40,40], maxZoom: 12 });
+  }
+
+  // Setup popup click for "Edit"
+  state.map.off('popupopen').on('popupopen', e => {
+    const link = e.popup._contentNode.querySelector('a[data-edit]');
+    if (link){
+      link.addEventListener('click', ev => {
+        ev.preventDefault();
+        openEdit(link.dataset.edit);
+      });
+    }
+  });
+
+  if (!groupsWithGps.length){
+    L.popup().setLatLng([42.8,-83.5])
+      .setContent('<div style="text-align:center; padding:6px 4px;">No catches with GPS for current filters.<br><span style="opacity:.7;font-size:11px">(Photos taken with Location Services off won\'t map.)</span></div>')
+      .openOn(state.map);
+  }
+}
+
+/* TIMELINE: groups by month; one card per catch-group */
+function renderTimeline(){
+  const root = document.getElementById('timeline-view');
+  const byMonth = new Map();
+  state.groups.forEach(g => {
+    const c = pickPrimary(g);
+    if (!c.dateISO) return;
+    const d = new Date(c.dateISO);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!byMonth.has(key)) byMonth.set(key, []);
+    byMonth.get(key).push(g);
+  });
+
+  if (!byMonth.size){
+    root.innerHTML = `<div class="empty"><h2>No catches with dates yet</h2><p>Load your photo folder to pull EXIF timestamps.</p></div>`;
+    return;
+  }
+
+  const keys = [...byMonth.keys()].sort().reverse();
+  root.innerHTML = keys.map(k => {
+    const [y,m] = k.split('-').map(Number);
+    const monthName = new Date(y, m-1, 1).toLocaleDateString(undefined,{month:'long', year:'numeric'});
+    const gs = byMonth.get(k).sort((a,b)=>new Date(pickPrimary(b).dateISO)-new Date(pickPrimary(a).dateISO));
+    return `<div class="timeline-month">
+      <h3>${monthName} <span style="color:var(--muted); font-weight:400">· ${gs.length} catch${gs.length>1?'es':''}</span></h3>
+      <div class="timeline-row">${gs.map(cardHTML).join('')}</div>
+    </div>`;
+  }).join('');
+  attachCardClicks(root);
+}
+
+/* GALLERY */
+function renderGallery(){
+  const root = document.getElementById('gallery-view');
+  if (!state.groups.length){
+    root.innerHTML = `<div class="empty"><h2>No catches match those filters</h2><p>Reset filters or load your photo folder.</p></div>`;
+    return;
+  }
+  root.innerHTML = `<div class="gallery-grid">${state.groups.map(cardHTML).join('')}</div>`;
+  attachCardClicks(root);
+}
+
+function cardHTML(group){
+  const c = pickPrimary(group);
+  const sp = c.species || 'Untagged';
+  const dt = fmtDate(c.dateISO);
+  const cls = (c.species ? '' : 'untagged') + (c.hidden ? ' hidden' : '');
+  const nogps = (c.lat==null) ? '<div class="nogps">📍 no GPS</div>' : '';
+  const badge = group.length > 1 ? `<div class="multi-badge">+${group.length-1}</div>` : '';
+  return `<div class="card ${cls}" data-file="${escAttr(c.filename)}">
+    <div class="thumb-wrap">
+      <img class="thumb" loading="lazy" src="${imgSrcFor(c.filename)}" alt="${escAttr(c.filename)}">
+      ${badge}
+    </div>
+    <div class="meta">
+      <div class="sp" title="${escAttr(sp)}">${escHTML(sp)}</div>
+      <div class="dt">${dt}${c.waterType?(' · '+escHTML(c.waterType)):''}</div>
+      ${nogps}
+    </div>
+  </div>`;
+}
+
+function attachCardClicks(root){
+  root.querySelectorAll('.card').forEach(el => {
+    el.addEventListener('click', () => openEdit(el.dataset.file));
+  });
+}
+
+/* STATS */
+function renderStats(){
+  const root = document.getElementById('stats-view');
+  const allGroups = groupCatches(Object.values(state.catalog));
+  // Reduce to one record per catch (the primary photo of each group)
+  const allReps = allGroups.map(pickPrimary);
+  const tagged = allReps.filter(c=>c.species && c.species !== 'Not a catch');
+
+  // Counts
+  const total = tagged.length;
+  const withGps = tagged.filter(c=>c.lat!=null).length;
+  const withDate = tagged.filter(c=>c.dateISO).length;
+  const untagged = allReps.length - tagged.length;
+  const photoCount = Object.keys(state.catalog).length;
+  const dupesHidden = photoCount - allReps.length;
+
+  // Species
+  const speciesCount = {};
+  tagged.forEach(c => speciesCount[c.species] = (speciesCount[c.species]||0)+1);
+  const speciesSorted = Object.entries(speciesCount).sort((a,b)=>b[1]-a[1]);
+
+  // Months
+  const monthCount = Array(12).fill(0);
+  tagged.forEach(c => { if(c.dateISO){ monthCount[new Date(c.dateISO).getMonth()]++; } });
+  const monthMax = Math.max(1, ...monthCount);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Seasons
+  const seasonCount = {spring:0, summer:0, fall:0, winter:0};
+  tagged.forEach(c => { if(c.dateISO){ seasonCount[seasonOf(new Date(c.dateISO).getMonth()+1)]++; } });
+
+  // Best month per species
+  const speciesByMonth = {};
+  tagged.forEach(c => {
+    if (!c.dateISO) return;
+    const m = new Date(c.dateISO).getMonth();
+    speciesByMonth[c.species] = speciesByMonth[c.species] || Array(12).fill(0);
+    speciesByMonth[c.species][m]++;
+  });
+
+  root.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="label">Total catches</div><div class="value">${total}</div><div class="sub">${untagged} untagged · ${dupesHidden} dupes grouped</div></div>
+      <div class="stat-tile"><div class="label">Unique species</div><div class="value">${speciesSorted.length}</div><div class="sub">${speciesSorted[0]?(speciesSorted[0][0]+' most caught'):'—'}</div></div>
+      <div class="stat-tile"><div class="label">Mapped catches</div><div class="value">${withGps}</div><div class="sub">${total?Math.round(withGps/total*100):0}% have GPS</div></div>
+      <div class="stat-tile"><div class="label">Dated catches</div><div class="value">${withDate}</div><div class="sub">${total?Math.round(withDate/total*100):0}% have timestamp</div></div>
+    </div>
+
+    <div class="stat-section">
+      <h3>By species</h3>
+      ${speciesSorted.map(([sp,n])=>{
+        const pct = (n/(speciesSorted[0][1]||1))*100;
+        return `<div class="bar"><div class="lbl">${escHTML(sp)}</div><div class="track"><div class="fill" style="width:${pct}%"></div></div><div class="num">${n}</div></div>`;
+      }).join('') || '<div class="empty">No tagged species yet — click photos in the Gallery to tag them.</div>'}
+    </div>
+
+    <div class="stat-section">
+      <h3>By month</h3>
+      ${months.map((m,i)=>{
+        const n = monthCount[i]; const pct = (n/monthMax)*100;
+        const ssn = seasonOf(i+1);
+        return `<div class="bar"><div class="lbl">${m}</div><div class="track"><div class="fill" style="width:${pct}%; background:${seasonColor(ssn)}"></div></div><div class="num">${n}</div></div>`;
+      }).join('')}
+    </div>
+
+    <div class="stat-section">
+      <h3>By season</h3>
+      ${['spring','summer','fall','winter'].map(s=>{
+        const n = seasonCount[s];
+        const pct = (n/Math.max(1,Math.max(...Object.values(seasonCount))))*100;
+        return `<div class="bar"><div class="lbl" style="text-transform:capitalize">${s}</div><div class="track"><div class="fill" style="width:${pct}%; background:${seasonColor(s)}"></div></div><div class="num">${n}</div></div>`;
+      }).join('')}
+    </div>
+
+    <div class="stat-section">
+      <h3>Best month per species</h3>
+      ${Object.entries(speciesByMonth).map(([sp,arr])=>{
+        const max = Math.max(...arr);
+        if (!max) return '';
+        const best = arr.map((v,i)=>[v,i]).filter(([v])=>v===max).map(([,i])=>months[i]).join(', ');
+        return `<div class="bar"><div class="lbl">${escHTML(sp)}</div><div style="flex:1; color:var(--text); font-size:13px">${best}</div><div class="num">${max}</div></div>`;
+      }).join('') || ''}
+    </div>
+  `;
+}
+
+/* ---------- modal edit ---------- */
+let editingFile = null;
+function findGroupOf(filename){
+  return state.groups.find(g => g.some(c => c.filename === filename))
+      || groupCatches(Object.values(state.catalog)).find(g => g.some(c => c.filename === filename))
+      || [state.catalog[filename]];
+}
+function openEdit(filename){
+  const c = state.catalog[filename];
+  if (!c) return;
+  editingFile = filename;
+  const group = findGroupOf(filename);
+  document.getElementById('m-img').src = imgSrcFor(filename);
+  document.getElementById('m-title').textContent = c.species || 'Edit catch';
+  document.getElementById('m-file').textContent = filename + (group.length>1 ? `  ·  ${group.length} photos in this catch` : '');
+  document.getElementById('m-info').innerHTML = `
+    <b>Date:</b> ${fmtDate(c.dateISO)} ·
+    <b>GPS:</b> ${c.lat!=null?(c.lat.toFixed(5)+', '+c.lon.toFixed(5)):'—'}
+  `;
+  document.getElementById('m-species').value = c.species || '';
+  document.getElementById('m-water').value = c.waterType || '';
+  document.getElementById('m-size').value = c.sizeIn || '';
+  document.getElementById('m-gear').value = c.gear || '';
+  document.getElementById('m-notes').value = c.notes || '';
+  // Hide / Unhide button toggles label
+  const hideBtn = document.getElementById('m-hide');
+  if (c.hidden){
+    hideBtn.textContent = '↩ Unhide';
+    hideBtn.classList.add('unhide');
+    hideBtn.title = 'Restore this photo to your catalog';
+  } else {
+    hideBtn.textContent = c.likelyScreenshot ? '🗑 Hide (looks like screenshot)' : '🗑 Hide';
+    hideBtn.classList.remove('unhide');
+    hideBtn.title = 'Hide this photo from your catalog';
+  }
+
+  // Strip with the rest of the group; click switches selection
+  const strip = document.getElementById('m-strip');
+  if (group.length > 1){
+    strip.innerHTML = group.map(x =>
+      `<img src="${imgSrcFor(x.filename)}" data-file="${escAttr(x.filename)}" class="${x.filename===filename?'active':''}" alt="">`
+    ).join('') +
+    `<div class="apply-all-wrap">
+      <button class="apply-all" id="m-apply-all">Apply edits to all ${group.length} photos in this catch</button>
+    </div>`;
+    strip.style.display = 'block';
+    strip.querySelectorAll('img').forEach(el => {
+      el.addEventListener('click', () => openEdit(el.dataset.file));
+    });
+    document.getElementById('m-apply-all').addEventListener('click', () => saveEdit(true));
+  } else {
+    strip.innerHTML = '';
+    strip.style.display = 'none';
+  }
+
+  document.getElementById('modal').classList.add('show');
+}
+function closeEdit(){
+  document.getElementById('modal').classList.remove('show');
+  editingFile = null;
+}
+function saveEdit(applyAll){
+  if (!editingFile) return;
+  const fields = {
+    species:   document.getElementById('m-species').value.trim(),
+    waterType: document.getElementById('m-water').value,
+    sizeIn:    document.getElementById('m-size').value,
+    gear:      document.getElementById('m-gear').value.trim(),
+    notes:     document.getElementById('m-notes').value.trim(),
+  };
+  const targets = applyAll ? findGroupOf(editingFile).map(x => x.filename) : [editingFile];
+  targets.forEach(fn => Object.assign(state.catalog[fn], fields));
+  saveStore();
+  closeEdit();
+  rebuild();
+}
+
+/* ---------- escapes ---------- */
+function escHTML(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]); }
+function escAttr(s){ return escHTML(s); }
+
+/* ---------- tabs ---------- */
+function setTab(tab){
+  state.activeTab = tab;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('active', s.id === tab+'-view'));
+  if (tab==='map' && state.map) setTimeout(()=>state.map.invalidateSize(), 50);
+}
+
+/* ---------- setup ---------- */
+function setProgress(t){ const el = document.getElementById('setup-progress'); if (el) el.textContent = t || ''; }
+function dismissSetup(){ document.getElementById('setup').style.display = 'none'; }
+function showSetup(){ document.getElementById('setup').style.display = 'flex'; }
+
+/* ---------- export ---------- */
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state.catalog, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'fish-catalog.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- wire up ---------- */
+function init(){
+  loadStore();
+  migrate();
+
+  // iOS Safari can't pick a folder (no webkitdirectory) — hide that option.
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS){
+    const folderBtn = document.getElementById('pick-folder-btn');
+    const sheetFolder = document.getElementById('src-folder');
+    if (folderBtn) folderBtn.style.display = 'none';
+    if (sheetFolder) sheetFolder.style.display = 'none';
+  }
+
+  // tabs
+  document.querySelectorAll('nav.tabs button').forEach(b => {
+    b.addEventListener('click', ()=> setTab(b.dataset.tab));
+  });
+
+  // filters
+  ['f-species','f-season','f-year','f-water'].forEach(id => {
+    document.getElementById(id).addEventListener('change', ()=>{
+      const k = id.replace('f-','');
+      state.filters[k==='species'?'species': k==='season'?'season': k==='year'?'year':'water'] = document.getElementById(id).value;
+      rebuild();
+    });
+  });
+  document.getElementById('f-search').addEventListener('input', e => {
+    state.filters.search = e.target.value;
+    rebuild();
+  });
+  document.getElementById('f-clear').addEventListener('click', ()=>{
+    state.filters = { species:'', season:'', year:'', water:'', search:'' };
+    document.querySelectorAll('.filters select, .filters input[type="search"]').forEach(el => el.value='');
+    rebuild();
+  });
+  document.getElementById('f-group').addEventListener('change', e => {
+    state.groupingEnabled = e.target.checked;
+    rebuild();
+  });
+  document.getElementById('f-hidden').addEventListener('change', e => {
+    state.showHidden = e.target.checked;
+    rebuild();
+  });
+  document.getElementById('hide-shots-btn').addEventListener('click', () => {
+    const targets = Object.values(state.catalog).filter(c => c.likelyScreenshot && !c.hidden);
+    if (!targets.length) return;
+    if (!confirm(`Hide ${targets.length} photo${targets.length===1?'':'s'} that look like screenshots / social-media saves?\n\nYou can un-hide them later via "Show hidden".`)) return;
+    targets.forEach(c => c.hidden = true);
+    saveStore();
+    rebuild();
+  });
+
+  // Shared file-input handler for all sources
+  const handlePickedFiles = async (files) => {
+    if (!files || !files.length) return;
+    showSetup();           // show progress overlay during ingest
+    setProgress(`Reading ${files.length} files…`);
+    try {
+      await ingestFiles([...files]);
+    } catch(err){
+      console.error('ingest failed', err);
+      setProgress('Error: ' + (err && err.message || err));
+    }
+    setTimeout(() => {
+      dismissSetup();
+      if (state.map) setTimeout(() => state.map.invalidateSize(), 50);
+    }, 400);
+  };
+  ['folder-input','library-input','camera-input'].forEach(id => {
+    document.getElementById(id).addEventListener('change', e => {
+      const files = e.target.files;
+      handlePickedFiles(files);
+      e.target.value = ''; // allow re-picking the same files later
+    });
+  });
+
+  // Source picker bottom sheet
+  const sheet = document.getElementById('src-sheet');
+  const openSheet = () => sheet.classList.add('show');
+  const closeSheet = () => sheet.classList.remove('show');
+  document.getElementById('add-btn').addEventListener('click', openSheet);
+  document.getElementById('src-library').addEventListener('click', () => { closeSheet(); document.getElementById('library-input').click(); });
+  document.getElementById('src-camera') .addEventListener('click', () => { closeSheet(); document.getElementById('camera-input').click(); });
+  document.getElementById('src-folder') .addEventListener('click', () => { closeSheet(); document.getElementById('folder-input').click(); });
+  document.getElementById('src-cancel') .addEventListener('click', closeSheet);
+  sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
+
+  document.getElementById('export-btn').addEventListener('click', exportJSON);
+
+  // Setup-screen pickers (welcome/onboarding)
+  document.getElementById('pick-library-btn').addEventListener('click', () => document.getElementById('library-input').click());
+  document.getElementById('pick-folder-btn') .addEventListener('click', () => document.getElementById('folder-input').click());
+  document.getElementById('pick-camera-btn') .addEventListener('click', () => document.getElementById('camera-input').click());
+  document.getElementById('skip-btn').addEventListener('click', () => {
+    // Seed with pre-tagged-only data (no EXIF) just so the gallery has something
+    Object.keys(PRE_TAGGED).forEach(fn => {
+      if (!state.catalog[fn]){
+        state.catalog[fn] = Object.assign(
+          { filename: fn, species:'', waterType:'', notes:'', sizeIn:'', gear:'', lat:null, lon:null, dateISO:null, exifAttempted:false },
+          PRE_TAGGED[fn]
+        );
+      }
+    });
+    rebuild();
+    dismissSetup();
+  });
+
+  // modal
+  document.getElementById('m-cancel').addEventListener('click', closeEdit);
+  document.getElementById('m-save').addEventListener('click', () => saveEdit(false));
+  document.getElementById('m-hide').addEventListener('click', () => {
+    if (!editingFile) return;
+    const c = state.catalog[editingFile];
+    const group = findGroupOf(editingFile);
+    const willHide = !c.hidden;
+    if (willHide && group.length > 1){
+      const all = confirm(`Hide all ${group.length} photos in this catch?\n\nOK = hide all,  Cancel = hide just this one.`);
+      group.forEach(x => state.catalog[x.filename].hidden = true);
+      if (!all){
+        // user wanted just this one — un-hide the rest
+        group.forEach(x => { if (x.filename !== editingFile) state.catalog[x.filename].hidden = false; });
+      }
+    } else {
+      c.hidden = willHide;
+    }
+    saveStore();
+    closeEdit();
+    rebuild();
+  });
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target.id === 'modal') closeEdit();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEdit(); });
+
+  // First render
+  rebuild();
+
+  // If migration cleared bad GPS data, force the setup screen with a notice
+  // so the user reloads the folder and gets correct coordinates.
+  if (state.needsRescan){
+    document.querySelector('#setup h1').textContent = '🔧 Locations need a refresh';
+    document.querySelector('#setup p').innerHTML =
+      `Fixed an EXIF parsing bug that put pins in the wrong hemisphere — ` +
+      `<b>${state.needsRescan}</b> photo${state.needsRescan===1?'':'s'} need fresh coordinates. ` +
+      `Choose a source below to re-import. Your species/notes edits are preserved.`;
+    document.getElementById('skip-btn').textContent = 'Skip — keep current view';
+    showSetup();
+  } else if (Object.keys(state.catalog).length){
+    // If we already have a catalog from a previous session, hide setup automatically.
+    dismissSetup();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
