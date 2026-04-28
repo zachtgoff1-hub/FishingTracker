@@ -167,26 +167,170 @@
   }
   .timeline-row .card .thumb { aspect-ratio: 1/1; }
 
-  /* Stats */
-  #stats-view { padding: 24px; }
-  .stat-grid {
-    display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    margin-bottom: 24px;
-  }
-  .stat-tile {
-    background: var(--bg2); border:1px solid var(--line); border-radius: 12px; padding: 16px;
-  }
-  .stat-tile .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
-  .stat-tile .value { font-size: 28px; font-weight: 800; color: var(--text); margin-top: 4px; }
-  .stat-tile .sub { color: var(--muted); font-size: 12px; }
+  /* ========================= Stats page ========================= */
+  #stats-view { padding: 18px; }
 
-  .stat-section { margin-bottom: 24px; }
-  .stat-section h3 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 10px; }
-  .bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 13px; }
-  .bar .lbl { width: 160px; color: var(--text); }
-  .bar .track { flex:1; height: 8px; background: var(--bg3); border-radius: 4px; overflow:hidden; }
-  .bar .fill { height: 100%; background: var(--accent); }
-  .bar .num { width: 36px; text-align:right; color: var(--muted); font-size:12px; }
+  .stats-filter-chips {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+  }
+  .stats-filter-chips .chip {
+    background: var(--bg3); color: var(--accent);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 10px; font-size: 12px; font-weight: 600;
+  }
+
+  /* Hero tile grid — first card is a big "total" tile */
+  .stats-hero {
+    display: grid; gap: 10px;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    margin-bottom: 14px;
+  }
+  .hero-tile {
+    background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+    border: 1px solid var(--line); border-radius: 16px;
+    padding: 14px 16px; text-align: left;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 90px;
+  }
+  .hero-tile.big {
+    grid-row: span 2;
+    background: linear-gradient(135deg, #163b34 0%, #0e2724 100%);
+    border-color: #1f5a4f;
+    min-height: 190px;
+  }
+  .hero-tile .hero-icon { font-size: 26px; margin-bottom: 4px; line-height:1; }
+  .hero-tile.big .hero-icon { font-size: 56px; margin-bottom: 14px; }
+  .hero-tile .hero-num {
+    font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 4px;
+  }
+  .hero-tile.big .hero-num {
+    font-size: 64px; color: var(--accent);
+  }
+  .hero-tile .hero-lbl {
+    color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    font-weight: 600;
+  }
+  .hero-tile.big .hero-lbl { font-size: 13px; }
+
+  /* Stat card (general container) */
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .stat-h {
+    margin: 0 0 14px; font-size: 14px; color: var(--text); font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .stat-h-sub { color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 12px; }
+
+  /* Highlight cards */
+  .stat-card.highlight {
+    display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, #1d2c3c 0%, #14222f 100%);
+    border-color: #2c4660;
+  }
+  .stat-card.highlight.orange {
+    background: linear-gradient(135deg, #3a2614 0%, #2a1c0e 100%);
+    border-color: #5a3f24;
+  }
+  .stat-card.highlight .hl-emoji { font-size: 44px; line-height: 1; }
+  .stat-card.highlight .hl-title { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+  .stat-card.highlight .hl-name { color: var(--text); font-size: 20px; font-weight: 800; margin: 2px 0 4px; }
+  .stat-card.highlight .hl-sub  { color: var(--muted); font-size: 13px; }
+  .stat-card.highlight .hl-sub b { color: var(--accent); }
+
+  /* Species rows */
+  .sp-row {
+    display: grid; grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto; column-gap: 12px;
+    align-items: center; padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .sp-row:last-child { border-bottom: none; }
+  .sp-name {
+    color: var(--text); font-size: 15px; font-weight: 600;
+    grid-column: 1; grid-row: 1;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sp-name .medal { font-size: 18px; }
+  .sp-count {
+    color: var(--text); font-size: 22px; font-weight: 800;
+    grid-column: 2; grid-row: 1 / span 2; align-self: center;
+  }
+  .sp-track {
+    grid-column: 1; grid-row: 2;
+    height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden;
+  }
+  .sp-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), #6ee7d2);
+    border-radius: 4px;
+  }
+
+  /* Month grid — one tile per month with fish icons */
+  .month-grid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  }
+  .month-cell {
+    background: var(--bg3); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px;
+    border-left: 4px solid var(--ssn, var(--accent));
+    min-height: 88px;
+  }
+  .month-cell.zero { opacity: .5; }
+  .month-cell.best { background: linear-gradient(135deg, #1d3a32, #122522); border-color: var(--accent); }
+  .month-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .month-name { color: var(--text); font-weight: 700; font-size: 14px; }
+  .month-num { color: var(--ssn, var(--accent)); font-size: 22px; font-weight: 800; }
+  .month-fish {
+    line-height: 1.3; font-size: 16px;
+    word-break: break-all; /* allow many fish to wrap */
+  }
+  .fr-fish { display: inline-block; margin-right: 1px; }
+  .fr-zero { color: var(--muted); font-size: 22px; }
+  .fr-more {
+    background: var(--bg); color: var(--muted); border-radius: 8px;
+    padding: 1px 6px; font-size: 11px; font-weight: 700; margin-left: 4px;
+  }
+
+  /* Season bars — bigger, with fish */
+  .season-bars { display: flex; flex-direction: column; gap: 14px; }
+  .season-bar {
+    background: var(--bg3); border-radius: 12px; padding: 12px 14px;
+    border: 1px solid var(--line);
+  }
+  .season-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .season-icon { font-size: 22px; }
+  .season-lbl { color: var(--text); font-weight: 700; text-transform: capitalize; flex: 1; font-size: 15px; }
+  .season-num { color: var(--text); font-weight: 800; font-size: 20px; }
+  .season-pct { color: var(--muted); font-size: 13px; font-weight: 500; margin-left: 4px; }
+  .season-fish { line-height: 1.3; font-size: 18px; word-break: break-all; }
+
+  /* Best month per species — card grid */
+  .best-grid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+  .best-tile {
+    background: var(--bg3); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px;
+  }
+  .best-sp { color: var(--accent); font-weight: 700; font-size: 14px; }
+  .best-month { color: var(--text); font-size: 16px; font-weight: 700; margin: 4px 0 2px; }
+  .best-count { color: var(--muted); font-size: 12px; }
+
+  /* Meta footer card */
+  .stat-card.meta { font-size: 13px; }
+  .stat-meta-row { padding: 4px 0; color: var(--text); }
+  .stat-meta-row b { color: var(--accent); }
+
+  .empty-tiny { color: var(--muted); font-size: 13px; padding: 8px 0; }
 
   /* Setup overlay */
   #setup {
@@ -441,10 +585,48 @@
     /* Gallery — denser */
     .gallery-grid { gap: 8px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
     .timeline-row { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
-    .stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .stat-tile { padding: 12px; }
-    .stat-tile .value { font-size: 22px; }
-    .bar .lbl { width: 110px; font-size: 12px; }
+
+    /* Stats — 2-col layout on phones, big primary tile spans full width */
+    #stats-view { padding: 12px; padding-bottom: max(82px, calc(72px + env(safe-area-inset-bottom))); }
+    .stats-hero {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
+    }
+    .hero-tile.big {
+      grid-row: span 1;
+      grid-column: span 2;
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+      min-height: 0;
+      padding: 14px 16px;
+    }
+    .hero-tile.big .hero-icon { margin-bottom: 0; font-size: 44px; }
+    .hero-tile.big .hero-num { font-size: 44px; margin: 0; }
+    .hero-tile.big .hero-lbl { margin-top: 2px; }
+    .hero-tile { min-height: 96px; padding: 12px; }
+    .hero-tile .hero-num { font-size: 24px; }
+    .hero-tile .hero-icon { font-size: 22px; }
+
+    .stat-card { padding: 14px; border-radius: 14px; }
+    .stat-card.highlight { padding: 14px; gap: 12px; }
+    .stat-card.highlight .hl-emoji { font-size: 36px; }
+    .stat-card.highlight .hl-name { font-size: 17px; }
+    .sp-row { padding: 10px 0; }
+    .sp-name { font-size: 14px; }
+    .sp-count { font-size: 20px; }
+
+    .month-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .month-cell { min-height: 78px; padding: 10px; }
+    .month-name { font-size: 13px; }
+    .month-num { font-size: 20px; }
+    .month-fish { font-size: 14px; }
+
+    .season-bar { padding: 12px; }
+    .season-fish { font-size: 16px; }
+
+    .best-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .best-tile { padding: 10px; }
 
     /* Modal — full screen sheet on mobile */
     #modal { padding: 0; align-items: stretch; justify-content: stretch; }
@@ -480,7 +662,8 @@
   /* extra small phones */
   @media (max-width: 380px) {
     .gallery-grid { grid-template-columns: 1fr 1fr; }
-    .stat-grid { grid-template-columns: 1fr; }
+    .month-grid { grid-template-columns: 1fr; }
+    .best-grid { grid-template-columns: 1fr; }
   }
 
   /* desktop refinements */
@@ -1215,88 +1398,207 @@ function attachCardClicks(root){
   });
 }
 
-/* STATS */
+/* STATS — filter-aware. Uses state.groups (already excludes hidden + applies filters). */
 function renderStats(){
   const root = document.getElementById('stats-view');
-  const allGroups = groupCatches(Object.values(state.catalog));
-  // Reduce to one record per catch (the primary photo of each group)
-  const allReps = allGroups.map(pickPrimary);
-  const tagged = allReps.filter(c=>c.species && c.species !== 'Not a catch');
+
+  // Reduce filtered groups to one record per catch
+  const reps = state.groups.map(pickPrimary);
+  const tagged = reps.filter(c => c.species && c.species !== 'Not a catch');
+
+  // Empty state
+  if (!reps.length){
+    root.innerHTML = `<div class="empty">
+      <h2>No catches in view</h2>
+      <p>Adjust your filters or add some photos to see your stats.</p>
+    </div>`;
+    return;
+  }
 
   // Counts
-  const total = tagged.length;
-  const withGps = tagged.filter(c=>c.lat!=null).length;
-  const withDate = tagged.filter(c=>c.dateISO).length;
-  const untagged = allReps.length - tagged.length;
-  const photoCount = Object.keys(state.catalog).length;
-  const dupesHidden = photoCount - allReps.length;
+  const total    = tagged.length;
+  const untagged = reps.length - tagged.length;
+  const withGps  = tagged.filter(c => c.lat != null).length;
+  const dates    = tagged.map(c => c.dateISO).filter(Boolean).map(d => new Date(d));
+  const uniqueDays = new Set(dates.map(d => d.toISOString().slice(0,10))).size;
+  const earliest = dates.length ? new Date(Math.min(...dates)) : null;
+  const latest   = dates.length ? new Date(Math.max(...dates)) : null;
+  const yearsSpan = (earliest && latest)
+    ? Math.max(1, Math.round((latest-earliest)/(365.25*24*3600*1000)*10)/10)
+    : 0;
 
-  // Species
+  // Per-species
   const speciesCount = {};
   tagged.forEach(c => speciesCount[c.species] = (speciesCount[c.species]||0)+1);
   const speciesSorted = Object.entries(speciesCount).sort((a,b)=>b[1]-a[1]);
 
-  // Months
+  // Per month
   const monthCount = Array(12).fill(0);
-  tagged.forEach(c => { if(c.dateISO){ monthCount[new Date(c.dateISO).getMonth()]++; } });
+  tagged.forEach(c => { if (c.dateISO) monthCount[new Date(c.dateISO).getMonth()]++; });
   const monthMax = Math.max(1, ...monthCount);
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthsLong  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   // Seasons
   const seasonCount = {spring:0, summer:0, fall:0, winter:0};
-  tagged.forEach(c => { if(c.dateISO){ seasonCount[seasonOf(new Date(c.dateISO).getMonth()+1)]++; } });
+  tagged.forEach(c => { if (c.dateISO) seasonCount[seasonOf(new Date(c.dateISO).getMonth()+1)]++; });
+  const seasonTotal = Object.values(seasonCount).reduce((a,b)=>a+b,0);
 
   // Best month per species
   const speciesByMonth = {};
   tagged.forEach(c => {
     if (!c.dateISO) return;
     const m = new Date(c.dateISO).getMonth();
-    speciesByMonth[c.species] = speciesByMonth[c.species] || Array(12).fill(0);
-    speciesByMonth[c.species][m]++;
+    (speciesByMonth[c.species] = speciesByMonth[c.species] || Array(12).fill(0))[m]++;
   });
 
+  // "Biggest haul day" — most catches in one day
+  const dayCount = {};
+  tagged.forEach(c => { if(c.dateISO){ const k = c.dateISO.slice(0,10); dayCount[k] = (dayCount[k]||0)+1; } });
+  const bestDay = Object.entries(dayCount).sort((a,b)=>b[1]-a[1])[0]; // [dateStr, count]
+
+  // Helper — clamp # of fish icons to render so rows don't overflow on mobile
+  const fishRow = (n, cap=10) => {
+    if (n <= 0) return '<span class="fr-zero">·</span>';
+    const shown = Math.min(n, cap);
+    const rest  = n - shown;
+    const icons = '<span class="fr-fish">🐟</span>'.repeat(shown);
+    return icons + (rest>0 ? `<span class="fr-more">+${rest}</span>` : '');
+  };
+
+  // Best species name (used in hero tile)
+  const topSp = speciesSorted[0]; // ["Largemouth Bass", 17]
+
+  // Active filters summary line (subtle)
+  const f = state.filters;
+  const filterChips = [
+    f.species && `Species: ${f.species}`,
+    f.season  && `Season: ${f.season}`,
+    f.year    && `Year: ${f.year}`,
+    f.water   && `Water: ${f.water}`,
+    f.search  && `Search: "${f.search}"`,
+    state.showHidden && 'Includes hidden',
+    !state.groupingEnabled && 'Ungrouped'
+  ].filter(Boolean);
+
   root.innerHTML = `
-    <div class="stat-grid">
-      <div class="stat-tile"><div class="label">Total catches</div><div class="value">${total}</div><div class="sub">${untagged} untagged · ${dupesHidden} dupes grouped</div></div>
-      <div class="stat-tile"><div class="label">Unique species</div><div class="value">${speciesSorted.length}</div><div class="sub">${speciesSorted[0]?(speciesSorted[0][0]+' most caught'):'—'}</div></div>
-      <div class="stat-tile"><div class="label">Mapped catches</div><div class="value">${withGps}</div><div class="sub">${total?Math.round(withGps/total*100):0}% have GPS</div></div>
-      <div class="stat-tile"><div class="label">Dated catches</div><div class="value">${withDate}</div><div class="sub">${total?Math.round(withDate/total*100):0}% have timestamp</div></div>
+    ${filterChips.length
+      ? `<div class="stats-filter-chips">${filterChips.map(c=>`<span class="chip">${escHTML(c)}</span>`).join('')}</div>`
+      : ''}
+
+    <div class="stats-hero">
+      <div class="hero-tile big">
+        <div class="hero-icon">🎣</div>
+        <div class="hero-num">${total}</div>
+        <div class="hero-lbl">${total===1?'catch logged':'catches logged'}</div>
+      </div>
+      <div class="hero-tile">
+        <div class="hero-icon">🐟</div>
+        <div class="hero-num">${speciesSorted.length}</div>
+        <div class="hero-lbl">species</div>
+      </div>
+      <div class="hero-tile">
+        <div class="hero-icon">📍</div>
+        <div class="hero-num">${withGps}</div>
+        <div class="hero-lbl">mapped</div>
+      </div>
+      <div class="hero-tile">
+        <div class="hero-icon">📆</div>
+        <div class="hero-num">${uniqueDays}</div>
+        <div class="hero-lbl">${uniqueDays===1?'day on the water':'days on the water'}</div>
+      </div>
     </div>
 
-    <div class="stat-section">
-      <h3>By species</h3>
-      ${speciesSorted.map(([sp,n])=>{
+    ${topSp ? `
+    <div class="stat-card highlight">
+      <div class="hl-emoji">🏆</div>
+      <div class="hl-body">
+        <div class="hl-title">Top catch</div>
+        <div class="hl-name">${escHTML(topSp[0])}</div>
+        <div class="hl-sub"><b>${topSp[1]}</b> ${topSp[1]===1?'catch':'catches'} — ${Math.round(topSp[1]/total*100)}% of your total</div>
+      </div>
+    </div>` : ''}
+
+    ${bestDay ? `
+    <div class="stat-card highlight orange">
+      <div class="hl-emoji">🔥</div>
+      <div class="hl-body">
+        <div class="hl-title">Biggest day</div>
+        <div class="hl-name">${new Date(bestDay[0]).toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'})}</div>
+        <div class="hl-sub"><b>${bestDay[1]}</b> ${bestDay[1]===1?'catch':'catches'} in one day</div>
+      </div>
+    </div>` : ''}
+
+    <div class="stat-card">
+      <h3 class="stat-h">By species</h3>
+      ${speciesSorted.length ? speciesSorted.map(([sp,n], idx)=>{
         const pct = (n/(speciesSorted[0][1]||1))*100;
-        return `<div class="bar"><div class="lbl">${escHTML(sp)}</div><div class="track"><div class="fill" style="width:${pct}%"></div></div><div class="num">${n}</div></div>`;
-      }).join('') || '<div class="empty">No tagged species yet — click photos in the Gallery to tag them.</div>'}
+        const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
+        return `<div class="sp-row">
+          <div class="sp-name">${medal?`<span class="medal">${medal}</span>`:''}${escHTML(sp)}</div>
+          <div class="sp-track"><div class="sp-fill" style="width:${pct}%"></div></div>
+          <div class="sp-count">${n}</div>
+        </div>`;
+      }).join('') : '<div class="empty-tiny">No tagged species. Tap any photo in Gallery to tag it.</div>'}
     </div>
 
-    <div class="stat-section">
-      <h3>By month</h3>
-      ${months.map((m,i)=>{
-        const n = monthCount[i]; const pct = (n/monthMax)*100;
-        const ssn = seasonOf(i+1);
-        return `<div class="bar"><div class="lbl">${m}</div><div class="track"><div class="fill" style="width:${pct}%; background:${seasonColor(ssn)}"></div></div><div class="num">${n}</div></div>`;
-      }).join('')}
+    <div class="stat-card">
+      <h3 class="stat-h">Catches by month <span class="stat-h-sub">— each 🐟 is one catch</span></h3>
+      <div class="month-grid">
+        ${monthsShort.map((m,i)=>{
+          const n = monthCount[i];
+          const ssn = seasonOf(i+1);
+          const cls = n===monthMax && n>0 ? 'best' : (n===0 ? 'zero' : '');
+          return `<div class="month-cell ${cls}" style="--ssn:${seasonColor(ssn)}">
+            <div class="month-head"><span class="month-name">${m}</span><span class="month-num">${n}</span></div>
+            <div class="month-fish">${fishRow(n, 12)}</div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>
 
-    <div class="stat-section">
-      <h3>By season</h3>
-      ${['spring','summer','fall','winter'].map(s=>{
-        const n = seasonCount[s];
-        const pct = (n/Math.max(1,Math.max(...Object.values(seasonCount))))*100;
-        return `<div class="bar"><div class="lbl" style="text-transform:capitalize">${s}</div><div class="track"><div class="fill" style="width:${pct}%; background:${seasonColor(s)}"></div></div><div class="num">${n}</div></div>`;
-      }).join('')}
+    <div class="stat-card">
+      <h3 class="stat-h">Catches by season</h3>
+      <div class="season-bars">
+        ${['spring','summer','fall','winter'].map(s=>{
+          const n = seasonCount[s];
+          const pct = seasonTotal ? Math.round(n/seasonTotal*100) : 0;
+          const icon = ({spring:'🌱', summer:'☀️', fall:'🍂', winter:'❄️'})[s];
+          return `<div class="season-bar">
+            <div class="season-head">
+              <span class="season-icon">${icon}</span>
+              <span class="season-lbl">${s}</span>
+              <span class="season-num">${n}<span class="season-pct">·${pct}%</span></span>
+            </div>
+            <div class="season-fish">${fishRow(n, 18)}</div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>
 
-    <div class="stat-section">
-      <h3>Best month per species</h3>
-      ${Object.entries(speciesByMonth).map(([sp,arr])=>{
-        const max = Math.max(...arr);
-        if (!max) return '';
-        const best = arr.map((v,i)=>[v,i]).filter(([v])=>v===max).map(([,i])=>months[i]).join(', ');
-        return `<div class="bar"><div class="lbl">${escHTML(sp)}</div><div style="flex:1; color:var(--text); font-size:13px">${best}</div><div class="num">${max}</div></div>`;
-      }).join('') || ''}
+    ${Object.keys(speciesByMonth).length ? `
+    <div class="stat-card">
+      <h3 class="stat-h">Best month per species</h3>
+      <div class="best-grid">
+        ${Object.entries(speciesByMonth).map(([sp,arr])=>{
+          const max = Math.max(...arr);
+          if (!max) return '';
+          const bestIdxs = arr.map((v,i)=>[v,i]).filter(([v])=>v===max).map(([,i])=>i);
+          const bestNames = bestIdxs.map(i=>monthsLong[i]).join(' & ');
+          return `<div class="best-tile">
+            <div class="best-sp">${escHTML(sp)}</div>
+            <div class="best-month">${bestNames}</div>
+            <div class="best-count">${max} ${max===1?'catch':'catches'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+
+    <div class="stat-card meta">
+      ${earliest && latest ? `<div class="stat-meta-row">📅 First catch: <b>${earliest.toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}</b></div>
+      <div class="stat-meta-row">📅 Latest catch: <b>${latest.toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}</b></div>
+      <div class="stat-meta-row">⏳ Span: <b>${yearsSpan} ${yearsSpan===1?'year':'years'}</b></div>` : ''}
+      ${untagged ? `<div class="stat-meta-row" style="color:var(--muted)">… plus ${untagged} untagged photo${untagged===1?'':'s'} in view (tap any to identify the species)</div>` : ''}
     </div>
   `;
 }
